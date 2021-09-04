@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -41,11 +44,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Implementation\SignalRCallTypes.cs" />
+    <Compile Include="Implementation\SignalRClient.cs" />
+    <Compile Include="Implementation\SignalRClientResponse.cs" />
+    <Compile Include="Implementation\SignalRRequest.cs" />
+    <Compile Include="Implementation\SignalRRequestStatus.cs" />
+    <Compile Include="Implementation\SignalRTools.cs" />
     <Compile Include="ISignalRClient.cs" />
     <Compile Include="ISignalRClientLogger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SignalRClientBuilder.cs" />
     <Compile Include="SignalRRequestFailedException.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
