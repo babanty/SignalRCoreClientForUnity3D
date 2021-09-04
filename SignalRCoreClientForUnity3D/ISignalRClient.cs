@@ -19,10 +19,16 @@ namespace SignalRCoreClientForUnity3D
         void On<T>(string method, Action<T> action);
 
         /// <summary> Subscribe to the event of receiving a message from the server </summary>
-        void On<T>(string method, Func<Task> action);
+        void On<T1, T2>(string method, Func<T1, T2, Task> action);
 
         /// <summary> Subscribe to the event of receiving a message from the server </summary>
-        void On<T>(string method, Action action);
+        void On<T1, T2>(string method, Action<T1, T2> action);
+
+        /// <summary> Subscribe to the event of receiving a message from the server </summary>
+        void On(string method, Func<Task> action);
+
+        /// <summary> Subscribe to the event of receiving a message from the server </summary>
+        void On(string method, Action action);
 
         /// <summary> Subscribe to the event of receiving a message from the server </summary>
         void On(string method, Func<object[], Task> action);

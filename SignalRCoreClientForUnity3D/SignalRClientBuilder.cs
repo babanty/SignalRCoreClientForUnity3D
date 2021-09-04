@@ -1,26 +1,33 @@
-﻿using System;
+﻿using SignalRCoreClientForUnity3D.Implementation;
+using System;
 
 namespace SignalRCoreClientForUnity3D
 {
     public class SignalRClientBuilder
     {
+        private string Url { get; set; }
+        private ISignalRClientLogger Logger { get; set; }
 
-
-        public void Build()
+        public virtual ISignalRClient Build()
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrEmpty(Url))
+                throw new ArgumentException("The Url cannot be null or empty. Use th \"WithUrl\" method.");
+
+            return new SignalRClient(Url, Logger);
         }
 
 
-        public void WithUrl(string url)
+        public SignalRClientBuilder WithUrl(string url)
         {
-            throw new NotImplementedException();
+            Url = url;
+            return this;
         }
 
 
-        public void AddLogger(ISignalRClientLogger logger)
+        public SignalRClientBuilder AddLogger(ISignalRClientLogger logger)
         {
-            throw new NotImplementedException();
+            Logger = logger;
+            return this;
         }
     }
 }
