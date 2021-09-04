@@ -311,61 +311,24 @@ namespace SignalRCoreClientForUnity3D.Implementation
 
             var task = Task.Run(async () =>
             {
-                var fullResponse = ""; // полный ответ, на случай если он был разбит на не сколько строк
+                var fullResponse = new StringBuilder(); // полный ответ, на случай если он был разбит на не сколько строк
                 while (ReceiveOn)
                 {
-                    ArraySegment<byte> bytesReceived = new ArraySegment<byte>(new byte[1024]);
-
                     try
                     {
-                        var result = await WebSocket.ReceiveAsync(bytesReceived, ReceiveCancellationToken);
-
-                        var response = Encoding.UTF8.GetString(bytesReceived.Array, 0, result.Count);
-
-                        _logger?.Log(LogLevel.Trace, $"response from server: {response}");
-
-                        // проверка на дисконнект
-                        if (string.IsNullOrEmpty(response) && WebSocket.State == WebSocketState.CloseReceived)
-                        {
-                            var msg = "Disconnected by server request. If you did not call the connection reset, then check that Server-method returns something.";
-                            _logger?.Log(LogLevel.Info, msg);
-                            DisconnectedEvent?.Invoke(msg);
-                            break;
-                        }
-
-                        fullResponse += response;
-
-                        // если не пришел символ окончания телеграммы то заканчиваем итерацию, чтобы в последующих собрать всю телеграмму и только тогда ее обработать
-                        if (response[response.Length - 1] != SignalRTools.TelegramSeparatorChar)
-                            continue;
-
-                        var deserializedResponse = ConvertSignalRResponse(fullResponse);
-
-                        fullResponse = ""; // сбрасываем коллектор всех кусков ответов
-
-                        // если это ответ сервером на запрос от клиента
-                        bool isItResposne = false;
-                        lock (SignalRRequestsLocker)
-                            isItResposne = SignalRRequests.Any(r => r.InvocationId == deserializedResponse.InvocationId);
-                        if (isItResposne)
-                                SetResponseToRequest(deserializedResponse);
-                        // если это запрос от сервера клиенту
-                        else
-                        {
-                            _ = CommonReceivedEvent.Invoke(deserializedResponse);
-
-                            // если сервер ожидает ответ
-                            if (deserializedResponse.Type == SignalRCallTypes.Invocation && !string.IsNullOrEmpty(deserializedResponse.InvocationId))
-                                _logger?.Log(LogLevel.Trace, "I am not able to send a response to the server about completion"); // TODO [NotImpl] отправлять ответ серверу о завершении
-                        }
-                            
-
+                        await ReceiveIteration(ReceiveCancellationToken, fullResponse);
                     }
                     catch (WebSocketException e)
                     {
-                        _logger?.Log(LogLevel.Info, e, "Disconnected by exception");
+                        _logger?.Log(LogLevel.Warning, e, "Disconnected by exception");
                         await DisconnectedEvent.Invoke(e.Message);
                         break;
+                    }
+                    catch (DisconnectException)
+                    {
+                        var msg = "Disconnected by server request. If you did not call the connection reset, then check that Server-method returns something.";
+                        _logger?.Log(LogLevel.Info, msg);
+                        DisconnectedEvent?.Invoke(msg);
                     }
                     catch (Exception e)
                     {
@@ -376,6 +339,49 @@ namespace SignalRCoreClientForUnity3D.Implementation
                     await Task.Delay(2);
                 }
             });
+        }
+
+
+        private async Task ReceiveIteration(CancellationToken ReceiveCancellationToken, StringBuilder fullResponse)
+        {
+            ArraySegment<byte> bytesReceived = new ArraySegment<byte>(new byte[1024]);
+
+            var result = await WebSocket.ReceiveAsync(bytesReceived, ReceiveCancellationToken);
+
+            var response = Encoding.UTF8.GetString(bytesReceived.Array, 0, result.Count);
+
+            _logger?.Log(LogLevel.Trace, $"response from server: {response}");
+
+            // проверка на дисконнект
+            if (string.IsNullOrEmpty(response) && WebSocket.State == WebSocketState.CloseReceived)
+                throw new DisconnectException();
+
+            fullResponse.Append(response);
+
+            // если не пришел символ окончания телеграммы то заканчиваем итерацию, чтобы в последующих собрать всю телеграмму и только тогда ее обработать
+            if (response[response.Length - 1] != SignalRTools.TelegramSeparatorChar)
+                return;
+
+            var deserializedResponse = ConvertSignalRResponse(fullResponse.ToString());
+
+            fullResponse.Clear(); // сбрасываем коллектор всех кусков ответов
+
+            // если это ответ сервером на запрос от клиента
+            bool isItResposne = false;
+            lock (SignalRRequestsLocker)
+                isItResposne = SignalRRequests.Any(r => r.InvocationId == deserializedResponse.InvocationId);
+            if (isItResposne)
+                SetResponseToRequest(deserializedResponse);
+
+            // если это запрос от сервера клиенту
+            else
+            {
+                _ = CommonReceivedEvent.Invoke(deserializedResponse);
+
+                // если сервер ожидает ответ
+                if (deserializedResponse.Type == SignalRCallTypes.Invocation && !string.IsNullOrEmpty(deserializedResponse.InvocationId))
+                    _logger?.Log(LogLevel.Trace, "I am not able to send a response to the server about completion"); // TODO [NotImpl] отправлять ответ серверу о завершении
+            }
         }
 
 
