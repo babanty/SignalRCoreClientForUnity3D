@@ -1,6 +1,6 @@
 ﻿namespace SignalRCoreClientForUnity3D.Implementation
 {
-    public enum SignalRCallTypes
+    internal enum SignalRCallTypes
     {
         Unknown = 0,
         /// <summary> Отправили простое сообщение </summary>

@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +15,7 @@ using System.Threading.Tasks;
 namespace SignalRCoreClientForUnity3D.Implementation
 {
     /// <summary> Все комменты к публичным методам в интерфейсе ISignalRClient </summary>
-    public class SignalRClient : ISignalRClient
+    internal class SignalRClient : ISignalRClient
     {
         public event Func<SignalRClientResponse, Task> CommonReceivedEvent = (s) => Task.CompletedTask;
         public event Func<string, Task> DisconnectedEvent = (s) => Task.CompletedTask;
@@ -32,12 +31,15 @@ namespace SignalRCoreClientForUnity3D.Implementation
         /// <summary> [CanBeNull] </summary>
         private readonly ISignalRClientLogger _logger;
         private readonly string _uri;
+        private readonly SignalRRequestReceiver _signalRRequestReceiver;
 
 
         public SignalRClient(string uri, ISignalRClientLogger logger = null)
         {
             _uri = uri;
             _logger = logger;
+
+            _signalRRequestReceiver = new SignalRRequestReceiver(this, logger);
         }
 
 
@@ -142,6 +144,16 @@ namespace SignalRCoreClientForUnity3D.Implementation
         public bool IsConnected() => (WebSocket.State == WebSocketState.Open || WebSocket.State == WebSocketState.Connecting) && IsHandchakesCompleted;
 
 
+        public void On<T>(string method, Func<T, Task> action) => _signalRRequestReceiver.On(method, action);
+        public void On<T>(string method, Action<T> action) => _signalRRequestReceiver.On(method, action);
+        public void On<T1, T2>(string method, Func<T1, T2, Task> action) => _signalRRequestReceiver.On(method, action);
+        public void On<T1, T2>(string method, Action<T1, T2> action) => _signalRRequestReceiver.On(method, action);
+        public void On(string method, Func<Task> action) => _signalRRequestReceiver.On(method, action);
+        public void On(string method, Action action) => _signalRRequestReceiver.On(method, action);
+        public void On(string method, Func<object[], Task> action) => _signalRRequestReceiver.On(method, action);
+        public void On(string method, Action<object[]> action) => _signalRRequestReceiver.On(method, action);
+
+
         /// <summary> Получить и везде где надо прокинуть новый код сообщения для отправки в SignalR </summary>
         private string GetNewInvocationId()
         {
@@ -221,7 +233,7 @@ namespace SignalRCoreClientForUnity3D.Implementation
         {
             if (telegram == default || telegram.Count == 0)
             {
-                _logger.Log(LogLevel.Warning, "Telegram can't be null or empty");
+                _logger?.Log(LogLevel.Warning, "Telegram can't be null or empty");
                 return;
             }
 
@@ -251,7 +263,7 @@ namespace SignalRCoreClientForUnity3D.Implementation
         /// <param name="telegram"> json со всеми необходимыми хедерами (в начале есть NOTE и там ссылки на то какие они должны быть) с битом завершения сообщения </param>
         private async Task SendTelegram(ArraySegment<byte> telegram)
         {
-            _logger.Log(LogLevel.Trace, $"Sending a message: {SignalRTools.DecodeTelegram(telegram)}");
+            _logger?.Log(LogLevel.Trace, $"Sending a message: {SignalRTools.DecodeTelegram(telegram)}");
             await WebSocket.SendAsync(telegram, WebSocketMessageType.Text, true, CancellationToken.None);
         }
 
@@ -340,12 +352,11 @@ namespace SignalRCoreClientForUnity3D.Implementation
                         // если это запрос от сервера клиенту
                         else
                         {
-                            await CommonReceivedEvent.Invoke(deserializedResponse);
+                            _ = CommonReceivedEvent.Invoke(deserializedResponse);
 
                             // если сервер ожидает ответ
                             if (deserializedResponse.Type == SignalRCallTypes.Invocation && !string.IsNullOrEmpty(deserializedResponse.InvocationId))
-                                _logger.Log(LogLevel.Warning, "Я не умею отправлять ответ серверу о завершении"); // TODO [-] [NotImpl] отправлять ответ серверу о завершении
-
+                                _logger?.Log(LogLevel.Trace, "I am not able to send a response to the server about completion"); // TODO [NotImpl] отправлять ответ серверу о завершении
                         }
                             
 

@@ -6,7 +6,7 @@ using System.Text;
 
 namespace SignalRCoreClientForUnity3D.Implementation
 {
-    public static class SignalRTools
+    internal static class SignalRTools
     {
         /// <summary> end of every package is a Separator, the separator is 0x1e for Json Protocol. </summary>
         private const byte TelegramSeparator = 0x1e;

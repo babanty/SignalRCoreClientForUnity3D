@@ -1,6 +1,6 @@
 ﻿namespace SignalRCoreClientForUnity3D.Implementation
 {
-    public class SignalRClientResponse
+    internal class SignalRClientResponse
     {
         public SignalRCallTypes? Type { get; set; }
         public string InvocationId { get; set; }
