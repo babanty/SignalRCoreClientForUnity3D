@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Implementation\DisconnectException.cs" />
     <Compile Include="Implementation\SignalRCallTypes.cs" />
     <Compile Include="Implementation\SignalRClient.cs" />
     <Compile Include="Implementation\SignalRClientResponse.cs" />

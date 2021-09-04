@@ -11,10 +11,10 @@ namespace SignalRCoreClientForUnity3D.Implementation
         private readonly ISignalRClientLogger _logger;
 
 
-        /// <summary> обработчики запросов от сервера, где в виде словаря, где key это метод на который отправили запрос (target), а value - обработчик </summary>
+        /// <summary> Handlers of the request from the server. key - the target method to which the request is sent; value - handler </summary>
         private Dictionary<string, Func<object[], Task>> AsyncRequestHandlers { get; set; } = new Dictionary<string, Func<object[], Task>>();
 
-        /// <summary> обработчики запросов от сервера, где в виде словаря, где key это метод на который отправили запрос (target), а value - обработчик </summary>
+        /// <summary> Handlers of the request from the server. key - the target method to which the request is sent; value - handler </summary>
         private Dictionary<string, Action<object[]>> RequestHandlers { get; set; } = new Dictionary<string, Action<object[]>>();
 
 

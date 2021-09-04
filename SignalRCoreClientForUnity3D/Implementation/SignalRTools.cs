@@ -14,10 +14,10 @@ namespace SignalRCoreClientForUnity3D.Implementation
         public const char TelegramSeparatorChar = '\u001e';
 
 
-        /// <summary> Получить телеграмму готовую к отправке на SignalREndpoint  </summary>
-        /// <param name="request"> объект-контейнер содержащий аргументы запроса </param>
-        /// <param name="method"> метод Hub-а SignalR-а </param>
-        /// <param name="invocationId"> код с которым придет ответ на эту телеграмму </param>
+        /// <summary> Get a telegram ready to be sent to SignalREndpoint </summary>
+        /// <param name="request"> a container object which contains the request arguments </param>
+        /// <param name="method"> SignalR Hub method </param>
+        /// <param name="invocationId"> telegram id from response </param>
         public static ArraySegment<byte> GetTelegramToSend<T>(T request, string method, string invocationId = null)
         {
             var arguments = new T[] { request };
@@ -27,10 +27,10 @@ namespace SignalRCoreClientForUnity3D.Implementation
         }
 
 
-        /// <summary> Получить телеграмму готовую к отправке на SignalREndpoint  </summary>
-        /// <param name="args"> аргументы endpoint-а </param>
-        /// <param name="method"> метод Hub-а SignalR-а </param>
-        /// <param name="invocationId"> код с которым придет ответ на эту телеграмму </param>
+        /// <summary> Get a telegram ready to be sent to SignalREndpoint </summary>
+        /// <param name="args"> endpoint arguments </param>
+        /// <param name="method"> SignalR Hub method  </param>
+        /// <param name="invocationId"> telegram id from response </param>
         public static ArraySegment<byte> GetTelegramToSend(string method, object[] args, string invocationId = null)
         {
             var arguments = JsonConvert.SerializeObject(args);
@@ -39,9 +39,9 @@ namespace SignalRCoreClientForUnity3D.Implementation
         }
 
 
-        /// <summary> Получить пустую телеграмму готовую к отправке на SignalREndpoint  </summary>
-        /// <param name="method"> метод Hub-а SignalR-а </param>
-        /// <param name="invocationId"> код с которым придет ответ на эту телеграмму </param>
+        /// <summary> Get an empty telegram ready to be sent to SignalREndpoint </summary>
+        /// <param name="method"> SignalR Hub method </param>
+        /// <param name="invocationId"> telegram id from response</param>
         public static ArraySegment<byte> GetTelegramToSend(string method, string invocationId = null)
         {
             return GetStandardTelegram(method, "[]", invocationId);
@@ -74,7 +74,7 @@ namespace SignalRCoreClientForUnity3D.Implementation
         }
 
 
-        /// <param name="arguments"> должен быть json-массивом, например: [{}, "myStr"], в котором index элемента соответствует номеру аргумента в endpoint-е по счету </param>
+        /// <param name="arguments"> Must be a json array, for example: [{}, "myStr"], in which the index of the element corresponds to the number of the argument in the endpoint by count </param>
         private static ArraySegment<byte> GetStandardTelegram(string method, string arguments = "" , string invocationId = null)
         {
             if (arguments[0] != '[' || arguments[arguments.Length - 1] != ']')

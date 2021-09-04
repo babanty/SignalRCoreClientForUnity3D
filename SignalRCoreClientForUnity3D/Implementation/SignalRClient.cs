@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace SignalRCoreClientForUnity3D.Implementation
 {
-    /// <summary> Все комменты к публичным методам в интерфейсе ISignalRClient </summary>
+    /// <summary> All comments to public methods in the ISignalRClient interface </summary>
     internal class SignalRClient : ISignalRClient
     {
         public event Func<SignalRClientResponse, Task> CommonReceivedEvent = (s) => Task.CompletedTask;
@@ -154,16 +154,16 @@ namespace SignalRCoreClientForUnity3D.Implementation
         public void On(string method, Action<object[]> action) => _signalRRequestReceiver.On(method, action);
 
 
-        /// <summary> Получить и везде где надо прокинуть новый код сообщения для отправки в SignalR </summary>
+        /// <summary> SignalR message id </summary>
         private string GetNewInvocationId()
         {
             return Guid.NewGuid().ToString();
         }
 
 
-        /// <summary> Получить ответ на ранее отправленное сообщение </summary>
-        /// <typeparam name="TResponse"> тип данных которые ожидаем в ответе </typeparam>
-        /// <param name="invocationId"> id телеграммы </param>
+        /// <summary> Get a reply to a previously sent message </summary>
+        /// <typeparam name="TResponse"> the type of data expected in the response </typeparam>
+        /// <param name="invocationId"> telegram id </param>
         /// <exception cref="ArgumentException"> Telegram must be sent. </exception>
         /// <exception cref="SignalRRequestFailedException"/>
         /// <exception cref="ArgumentNullException"> Response body from server is null, but expected: {typeof(TResponse).Name} </exception>
@@ -177,21 +177,21 @@ namespace SignalRCoreClientForUnity3D.Implementation
             return SignalRTools.ConvertArgument<TResponse>(requestBody);
         }
 
-        /// <summary> Дождаться положительного ответа от сервера, о том что ранее отправленное сообщение получено и обрбаотно </summary>
-        /// <param name="invocationId"> id телеграммы </param>
+        /// <summary> Wait for a positive response from the server, stating that the previously sent message has been received and processed. </summary>
+        /// <param name="invocationId"> telegram id </param>
         /// <exception cref="ArgumentException"> Telegram must be sent. </exception>
         /// <exception cref="SignalRRequestFailedException"/>
         private async Task WaitSendMessageResult(string invocationId)
         {
-            await GetSendMessageResponse(invocationId); // все ровно какой ответ, главное, что без ошибки
+            await GetSendMessageResponse(invocationId); // no matter what the answer is, the main thing is that without error
         }
 
 
         /// <summary> 
-        /// Получить ответ на ранее отправленное сообщение. Это будет только "результат" - тело телеграммы.  
-        /// Тело телеграммы может быть типом: Newtonsoft.Json.Linq.JObject или bool или null или int или string
+        /// Receive a reply to a previously sent message. This will only be the "result" - the body of the telegram.  
+        /// The telegram body can be of type: Newtonsoft.Json.Linq.JObject or bool or null or int or string
         /// </summary>
-        /// <param name="invocationId"> id телеграммы </param>
+        /// <param name="invocationId"> telegram id </param>
         /// <exception cref="ArgumentException"> Telegram must be sent. </exception>
         /// <exception cref="SignalRRequestFailedException"/>
         private async Task<object> GetSendMessageResponse(string invocationId)
@@ -259,8 +259,8 @@ namespace SignalRCoreClientForUnity3D.Implementation
         }
 
 
-        /// <summary> Стандартная отправка сообщения на SignalR-server </summary>
-        /// <param name="telegram"> json со всеми необходимыми хедерами (в начале есть NOTE и там ссылки на то какие они должны быть) с битом завершения сообщения </param>
+        /// <summary> Standard message sending to SignalR-server </summary>
+        /// <param name="telegram"> json with all the necessary headers with the message completion bit (there is a NOTE in the beginning and there are links to what they should be)  </param>
         private async Task SendTelegram(ArraySegment<byte> telegram)
         {
             _logger?.Log(LogLevel.Trace, $"Sending a message: {SignalRTools.DecodeTelegram(telegram)}");
@@ -311,61 +311,24 @@ namespace SignalRCoreClientForUnity3D.Implementation
 
             var task = Task.Run(async () =>
             {
-                var fullResponse = ""; // полный ответ, на случай если он был разбит на не сколько строк
+                var fullResponseCollector = new StringBuilder(); // complete answer, in case it was split into several lines
                 while (ReceiveOn)
                 {
-                    ArraySegment<byte> bytesReceived = new ArraySegment<byte>(new byte[1024]);
-
                     try
                     {
-                        var result = await WebSocket.ReceiveAsync(bytesReceived, ReceiveCancellationToken);
-
-                        var response = Encoding.UTF8.GetString(bytesReceived.Array, 0, result.Count);
-
-                        _logger?.Log(LogLevel.Trace, $"response from server: {response}");
-
-                        // проверка на дисконнект
-                        if (string.IsNullOrEmpty(response) && WebSocket.State == WebSocketState.CloseReceived)
-                        {
-                            var msg = "Disconnected by server request. If you did not call the connection reset, then check that Server-method returns something.";
-                            _logger?.Log(LogLevel.Info, msg);
-                            DisconnectedEvent?.Invoke(msg);
-                            break;
-                        }
-
-                        fullResponse += response;
-
-                        // если не пришел символ окончания телеграммы то заканчиваем итерацию, чтобы в последующих собрать всю телеграмму и только тогда ее обработать
-                        if (response[response.Length - 1] != SignalRTools.TelegramSeparatorChar)
-                            continue;
-
-                        var deserializedResponse = ConvertSignalRResponse(fullResponse);
-
-                        fullResponse = ""; // сбрасываем коллектор всех кусков ответов
-
-                        // если это ответ сервером на запрос от клиента
-                        bool isItResposne = false;
-                        lock (SignalRRequestsLocker)
-                            isItResposne = SignalRRequests.Any(r => r.InvocationId == deserializedResponse.InvocationId);
-                        if (isItResposne)
-                                SetResponseToRequest(deserializedResponse);
-                        // если это запрос от сервера клиенту
-                        else
-                        {
-                            _ = CommonReceivedEvent.Invoke(deserializedResponse);
-
-                            // если сервер ожидает ответ
-                            if (deserializedResponse.Type == SignalRCallTypes.Invocation && !string.IsNullOrEmpty(deserializedResponse.InvocationId))
-                                _logger?.Log(LogLevel.Trace, "I am not able to send a response to the server about completion"); // TODO [NotImpl] отправлять ответ серверу о завершении
-                        }
-                            
-
+                        await ReceiveIteration(ReceiveCancellationToken, fullResponseCollector);
                     }
                     catch (WebSocketException e)
                     {
-                        _logger?.Log(LogLevel.Info, e, "Disconnected by exception");
+                        _logger?.Log(LogLevel.Warning, e, "Disconnected by exception");
                         await DisconnectedEvent.Invoke(e.Message);
                         break;
+                    }
+                    catch (DisconnectException)
+                    {
+                        var msg = "Disconnected by server request. If you did not call the connection reset, then check that Server-method returns something.";
+                        _logger?.Log(LogLevel.Info, msg);
+                        DisconnectedEvent?.Invoke(msg);
                     }
                     catch (Exception e)
                     {
@@ -379,14 +342,57 @@ namespace SignalRCoreClientForUnity3D.Implementation
         }
 
 
-        /// <summary> Очистить телеграмму от служебного "мусора" </summary>
-        private string GetCleanedUpResponse(string fullResponse)
+        private async Task ReceiveIteration(CancellationToken ReceiveCancellationToken, StringBuilder fullResponseCollector)
         {
-            return fullResponse.Trim(SignalRTools.TelegramSeparatorChar); // убираем из ответа символ окончания телеграммы
+            ArraySegment<byte> bytesReceived = new ArraySegment<byte>(new byte[1024]);
+
+            var result = await WebSocket.ReceiveAsync(bytesReceived, ReceiveCancellationToken);
+
+            var response = Encoding.UTF8.GetString(bytesReceived.Array, 0, result.Count);
+
+            _logger?.Log(LogLevel.Trace, $"response from server: {response}");
+
+
+            if (string.IsNullOrEmpty(response) && WebSocket.State == WebSocketState.CloseReceived)
+                throw new DisconnectException();
+
+            fullResponseCollector.Append(response);
+
+            // if the symbol of the end of the telegram has not arrived, then we end the iteration. In subsequent iterations, the entire telegram will be collected.
+            if (response[response.Length - 1] != SignalRTools.TelegramSeparatorChar)
+                return;
+
+            var deserializedResponse = ConvertSignalRResponse(fullResponseCollector.ToString());
+
+            fullResponseCollector.Clear();
+
+            // if this is a server response to a request from a client
+            bool isItResposne = false;
+            lock (SignalRRequestsLocker)
+                isItResposne = SignalRRequests.Any(r => r.InvocationId == deserializedResponse.InvocationId);
+            if (isItResposne)
+                SetResponseToSuitableRequest(deserializedResponse);
+
+            // if this is a request from the server to the client
+            else
+            {
+                _ = CommonReceivedEvent.Invoke(deserializedResponse);
+
+                // if the server expects a response
+                if (deserializedResponse.Type == SignalRCallTypes.Invocation && !string.IsNullOrEmpty(deserializedResponse.InvocationId))
+                    _logger?.Log(LogLevel.Warning, "Not implemented. Not able to send a response to the server about completion"); // TODO [NotImpl] это сценарий, если сервер что-то запросил у клиента и сразу же ждет ответа
+            }
         }
 
 
-        /// <summary> Конвертировать неочищенный ответ от сервера в соответствующий объект </summary>
+        /// <summary> Clear the telegram from service debris. </summary>
+        private string GetCleanedUpResponse(string fullResponse)
+        {
+            return fullResponse.Trim(SignalRTools.TelegramSeparatorChar); // remove the end of the telegram from the response
+        }
+
+
+        /// <summary> Convert an unprepared responce from the server to a wrapper </summary>
         private SignalRClientResponse ConvertSignalRResponse(string fullResponse)
         {
             var cleanedUpResponse = GetCleanedUpResponse(fullResponse);
@@ -394,8 +400,8 @@ namespace SignalRCoreClientForUnity3D.Implementation
         }
 
 
-        /// <summary> Вставить ответ на запрос в запрос, который будет найден по id внутри ответа </summary>
-        private void SetResponseToRequest(SignalRClientResponse response)
+        /// <summary> Insert the response to the request into the request, which will be found by id inside the response. </summary>
+        private void SetResponseToSuitableRequest(SignalRClientResponse response)
         {
             var request = SignalRRequests.FirstOrDefault(r => r.InvocationId == response.InvocationId);
             if(request is null)
