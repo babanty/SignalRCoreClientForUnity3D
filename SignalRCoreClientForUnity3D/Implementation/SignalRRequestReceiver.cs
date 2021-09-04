@@ -6,7 +6,7 @@ namespace SignalRCoreClientForUnity3D.Implementation
 {
     internal class SignalRRequestReceiver
     {
-        private SignalRClient _signalRClient;
+        private readonly SignalRClient _signalRClient;
         /// <summary> [CanBeNull] </summary>
         private readonly ISignalRClientLogger _logger;
 
