@@ -12,60 +12,66 @@ namespace SignalRCoreClientForUnity3D
         bool IsConnected();
 
 
-        /// <summary> Подписаться на событие получения сообщения от сервера на указанный метод </summary>
+        /// <summary> Subscribe to the event of receiving a message from the server </summary>
         void On<T>(string method, Func<T, Task> action);
 
-        /// <summary> Подписаться на событие получения сообщения от сервера на указанный метод </summary>
+        /// <summary> Subscribe to the event of receiving a message from the server </summary>
         void On<T>(string method, Action<T> action);
 
-        /// <summary> Подписаться на событие получения сообщения от сервера на указанный метод </summary>
+        /// <summary> Subscribe to the event of receiving a message from the server </summary>
         void On<T>(string method, Func<Task> action);
 
-        /// <summary> Подписаться на событие получения сообщения от сервера на указанный метод </summary>
+        /// <summary> Subscribe to the event of receiving a message from the server </summary>
         void On<T>(string method, Action action);
 
+        /// <summary> Subscribe to the event of receiving a message from the server </summary>
+        void On(string method, Func<object[], Task> action);
+
+        /// <summary> Subscribe to the event of receiving a message from the server </summary>
+        void On(string method, Action<object[]> action);
 
 
-        /// <summary> Отправляет пустое сообщение и дожидается ответа </summary>
-        /// <param name="method"> Метод Hub-а SignalR-а на сервере </param>
+
+        /// <summary> Sends an empty message and waits for a response </summary>
+        /// <param name="method"> SignalR Hub Method on server </param>
         /// <exception cref="ArgumentException"> Telegram must be sent. </exception>
         /// <exception cref="SignalRRequestFailedException"/>
         Task SendMessage(string method);
 
 
-        /// <summary> Отправляет сообщение и дожидается ответа, после чего его отдает </summary>
-        /// <typeparam name="TRequest"> Класс-контейнер, содержащий в себе аргументы запроса </typeparam>
-        /// <typeparam name="TResponse"> Класс, в который ждем в ответе </typeparam>
-        /// <param name="request"> Класс-контейнер, содержащий в себе аргументы запроса </param>
-        /// <param name="method"> Метод Hub-а SignalR-а на сервере </param>
+        /// <summary> Sends a message and waits for a response </summary>
+        /// <typeparam name="TRequest"> The container-class containing the request arguments </typeparam>
+        /// <typeparam name="TResponse"> The class to which we are waiting in the response </typeparam>
+        /// <param name="request"> The container-class containing the request arguments </param>
+        /// <param name="method"> SignalR Hub Method on server  </param>
         Task<TResponse> SendMessage<TRequest, TResponse>(string method, TRequest request);
 
 
-        /// <summary> Отправляет сообщение и дожидается ответа </summary>
-        /// <typeparam name="TRequest"> Класс-контейнер, содержащий в себе аргументы запроса </typeparam>
-        /// <param name="request"> Класс-контейнер, содержащий в себе аргументы запроса </param>
-        /// <param name="method"> Метод Hub-а SignalR-а на сервере </param>
+        /// <summary> Sends a message and waits for a response </summary>
+        /// <typeparam name="TRequest"> The container-class containing the request arguments </typeparam>
+        /// <param name="request"> The container-class containing the request arguments </param>
+        /// <param name="method"> SignalR Hub Method on server  </param>
         Task SendMessage<TRequest>(string method, TRequest request);
 
 
-        /// <summary> Отправляет пустое сообщение и дожидается ответа </summary>
-        /// <typeparam name="TResponse"> тип класса ответ-а от сервера </typeparam>
-        /// <param name="method"> Метод Hub-а SignalR-а на сервере </param>
+        /// <summary> Sends an empty message and waits for a response </summary>
+        /// <typeparam name="TResponse"> The class to which we are waiting in the response </typeparam>
+        /// <param name="method"> SignalR Hub Method on server  </param>
         /// <exception cref="ArgumentException"> Telegram must be sent. </exception>
         /// <exception cref="SignalRRequestFailedException"/>
         Task<TResponse> SendMessage<TResponse>(string method);
 
 
-        /// <summary> Отправляет сообщение и дожидается ответа о выполнении запроса </summary>
-        /// <param name="arguments"> аргументы endpoint-a (метода) SignalR-а на сервере </param>
-        /// <param name="method"> Метод Hub-а SignalR-а на сервере </param>
+        /// <summary> Sends a message and waits for a response to complete the request </summary>
+        /// <param name="arguments"> SignalR endpoint arguments on the server </param>
+        /// <param name="method"> SignalR Hub Method on server  </param>
         Task SendMessage(string method, params object[] arguments);
 
 
-        /// <summary> Отправляет сообщение и дожидается ответа </summary>
-        /// <typeparam name="TResponse"> тип класса ответ-а от сервера </typeparam>
-        /// <param name="arguments"> аргументы endpoint-a (метода) SignalR-а на сервере </param>
-        /// <param name="method"> Метод Hub-а SignalR-а на сервере </param>
+        /// <summary>  Sends a message and waits for a response </summary>
+        /// <typeparam name="TResponse"> The class to which we are waiting in the response </typeparam>
+        /// <param name="arguments"> SignalR endpoint arguments on the server </param>
+        /// <param name="method"> SignalR Hub Method on server  </param>
         Task<TResponse> SendMessage<TResponse>(string method, params object[] arguments);
     }
 }
